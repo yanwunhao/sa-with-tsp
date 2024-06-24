@@ -1,5 +1,6 @@
 import random
 import math
+import csv
 
 distance_map = [
     [None, 7, 9, 6, 7],
@@ -40,6 +41,7 @@ def order_to_cities(order):
 
 
 def simulated_annealing(initial_order, initial_temperature, cooling_rate):
+    log = []
     current_order = initial_order
     the_best_order = current_order
     temperature = initial_temperature
@@ -47,13 +49,25 @@ def simulated_annealing(initial_order, initial_temperature, cooling_rate):
         current_distance = get_total_distance(current_order)
         new_order = search_with_swap(current_order)
         new_distance = get_total_distance(new_order)
-        if new_distance < current_distance or random.random() < math.exp((current_distance - new_distance) / temperature):
+        r = random.random()
+        new_record = ["A"+"".join(order_to_cities(new_order))+"A", new_distance, new_distance - current_distance, r]
+        if new_distance < current_distance or r < math.exp((current_distance - new_distance) / temperature):
             current_order = new_order
+            new_record.append("Acc")
+        else:
+            new_record.append("Rej")
         if new_distance < get_total_distance(the_best_order):
             the_best_order = new_order
+        new_record.append("A"+"".join(order_to_cities(the_best_order))+"A")
+        log.append(new_record)
         temperature *= cooling_rate
-    return the_best_order
+    return the_best_order, log
 
 
-solution = simulated_annealing([2, 3, 4, 1], 100, 0.9)
-print(solution)
+solution, log = simulated_annealing([2, 3, 4, 1], 100, 0.9)
+
+with open('solution.csv', 'w', newline='') as f:
+    writer = csv.writer(f)
+    writer.writerow(["Sequence", "Distance", "Difference", "R", "Option", "Best"])
+    writer.writerows(log)
+    f.close()
